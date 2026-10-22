@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestão de Manutenção</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Inter & FontAwesome Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-amber-50/50 text-stone-800 h-full flex flex-col">
+
+     <!-- Cabeçalho da Fazenda -->
+<header class="bg-emerald-800 text-white shadow-md border-b-4 border-amber-600">
+        <div class="max-w-7xl mx-auto px-4 py-4 sm:px-6 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <div class="bg-emerald-900 p-2.5 rounded-xl border border-emerald-700 shadow-inner">
+                    <i class="fa-solid fa-cow text-amber-400 text-2xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-tight text-amber-100">Agropecuaria Previato</h1>
+                    <p class="text-xs text-emerald-300">Sistema de Gestão de Pecuária - Módulo Manutenção</p>
+                </div>
+            </div>
+            <div class="text-right hidden sm:block">
+                <span class="text-xs bg-emerald-900/80 px-3 py-1 rounded-full text-amber-200 border 
+                    border-emerald-700">
+                    <i class="fa-solid fa-database mr-1"></i> Armazenamento Local Ativo
+                </span>
+            </div>
+        </div>
+</header>   
+<!-- Formulário de Cadastro de Manutenção -->
+        <div class="bg-white rounded-2xl shadow-md p-6 mb-8 border border-stone-200">
+            <h2 class="text-xl font-semibold text-emerald-900 mb-4 pb-2 border-b border-stone-100">Registrar Novo Custo</h2>
+            
+            <form method="POST" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-stone-700 mb-1">Categoria</label>
+                    <select name="categoria" required class="w-full px-3 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-white">
+                        <option value="" disabled selected>Selecione a categoria</option>
+                        <option value="Cercas e Pastagens">Cercas e Pastagens</option>
+                        <option value="Maquinário e Tratores">Maquinário e Tratores</option>
+                        <option value="Benfeitorias (Curral/Galpão)">Benfeitorias (Curral/Galpão)</option>
+                        <option value="Combustível e Lubrificantes">Combustível e Lubrificantes</option>
+                        <option value="Mão de Obra / Diárias">Mão de Obra / Diárias</option>
+                        <option value="Outros">Outros</option>
+                    </select>
+                </div>
+
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-medium text-stone-700 mb-1">Descrição do Serviço / Gasto</label>
+                    <input type="text" name="descricao" required placeholder="Ex: Compra de arame farpado e mourões para a divisa" class="w-full px-3 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-stone-700 mb-1">Valor Total (R$)</label>
+                    <input type="number" step="0.01" name="valor" required placeholder="Ex: 450.00" class="w-full px-3 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-stone-700 mb-1">Data do Gasto</label>
+                    <input type="date" name="data_gasto" required class="w-full px-3 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                </div>
+
+                <div class="md:col-span-3 flex justify-end mt-2">
+                    <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-6 py-2.5 rounded-lg transition shadow">Salvar Custo</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Tabela de Custos Cadastrados -->
+        <div class="bg-white rounded-2xl shadow-md p-6 border border-stone-200 overflow-x-auto">
+            <h2 class="text-xl font-semibold text-emerald-900 mb-4">Histórico de Manutenção</h2>
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="border-b border-stone-200 text-stone-500 text-xs uppercase tracking-wider">
+                        <th class="py-3 px-4">Categoria</th>
+                        <th class="py-3 px-4">Descrição</th>
+                        <th class="py-3 px-4">Valor</th>
+                        <th class="py-3 px-4">Data</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-stone-100 text-sm">
+                    {% for item in registros %}
+                    <tr class="hover:bg-emerald-50/40 transition">
+                        <td class="py-3 px-4 font-semibold text-emerald-900">{{ item.categoria }}</td>
+                        <td class="py-3 px-4 text-stone-700">{{ item.descricao }}</td>
+                        <td class="py-3 px-4 text-emerald-700 font-semibold">R$ {{ "%.2f"|format(item.valor) }}</td>
+                        <td class="py-3 px-4 text-stone-500">{{ item.data_gasto }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="4" class="py-8 text-center text-stone-400">Nenhum custo de manutenção registrado ainda.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</body>
+</html>
