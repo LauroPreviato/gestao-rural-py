@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relatórios Gerais - Agropecuária Previato</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Inter & FontAwesome Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-amber-50/50 text-stone-800 h-full flex flex-col">
+
+    <!-- Cabeçalho da Fazenda -->
+    <header class="bg-emerald-800 text-white shadow-md border-b-4 border-amber-600">
+        <div class="max-w-7xl mx-auto px-4 py-4 sm:px-6 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <div class="bg-emerald-900 p-2.5 rounded-xl border border-emerald-700 shadow-inner">
+                    <i class="fa-solid fa-cow text-amber-400 text-2xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-tight text-amber-100">Agropecuaria Previato</h1>
+                    <p class="text-xs text-emerald-300">Sistema de Gestão de Pecuária - Módulo Relatórios</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-3">
+                <a href="{{ url_for('inicio') }}" class="bg-emerald-900/80 hover:bg-emerald-900 text-amber-200 px-4 py-2 rounded-xl text-xs font-medium border border-emerald-700 transition shadow-sm flex items-center space-x-2">
+                    <i class="fa-solid fa-arrow-left"></i>
+                    <span>Voltar ao Início</span>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Conteúdo Principal -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 py-8">
+        
+        <!-- Título da Seção -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+            <div>
+                <h2 class="text-2xl font-bold text-stone-800 flex items-center space-x-2">
+                    <i class="fa-solid fa-chart-pie text-emerald-700"></i>
+                    <span>Relatórios e Indicadores Gerais</span>
+                </h2>
+                <p class="text-sm text-stone-600">Acompanhe todos os investimentos, custos e lotes consolidados da fazenda.</p>
+            </div>
+        </div>
+
+        <!-- Cards de Resumo Financeiro -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-stone-200 border-l-4 border-l-emerald-600">
+                <p class="text-xs font-semibold text-stone-500 uppercase tracking-wider">Total em Gado</p>
+                <h3 class="text-2xl font-bold text-stone-800 mt-1">R$ {{ "%.2f"|format(gasto_gado) }}</h3>
+                <span class="text-xs text-emerald-600 font-medium"><i class="fa-solid fa-arrow-up-right-dots mr-1"></i> Aquisição de lotes</span>
+            </div>
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-stone-200 border-l-4 border-l-amber-500">
+                <p class="text-xs font-semibold text-stone-500 uppercase tracking-wider">Total em Insumos</p>
+                <h3 class="text-2xl font-bold text-stone-800 mt-1">R$ {{ "%.2f"|format(gasto_insumos) }}</h3>
+                <span class="text-xs text-amber-600 font-medium"><i class="fa-solid fa-warehouse mr-1"></i> Rações e aditivos</span>
+            </div>
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-stone-200 border-l-4 border-l-blue-600">
+                <p class="text-xs font-semibold text-stone-500 uppercase tracking-wider">Total em Manutenção</p>
+                <h3 class="text-2xl font-bold text-stone-800 mt-1">R$ {{ "%.2f"|format(gasto_manutencao) }}</h3>
+                <span class="text-xs text-blue-600 font-medium"><i class="fa-solid fa-wrench mr-1"></i> Custos operacionais</span>
+            </div>
+            <div class="bg-emerald-900 text-white p-5 rounded-2xl shadow-md border border-emerald-700">
+                <p class="text-xs font-semibold text-emerald-300 uppercase tracking-wider">Investimento Total</p>
+                <h3 class="text-2xl font-bold text-amber-300 mt-1">R$ {{ "%.2f"|format(gasto_total_geral) }}</h3>
+                <span class="text-xs text-emerald-200 font-medium"><i class="fa-solid fa-wallet mr-1"></i> Geral acumulado</span>
+            </div>
+        </div>
+
+        <!-- Navegação por Abas (Tabs) -->
+        <div class="bg-white rounded-2xl shadow-sm border border-stone-200 overflow-hidden">
+            <!-- Cabeçalho das Abas -->
+            <div class="flex border-b border-stone-200 overflow-x-auto bg-stone-50/50" id="tabsNav">
+                <button type="button" onclick="mudarAba('engorda')" id="btn-engorda" class="tab-btn px-6 py-4 text-sm font-semibold text-emerald-800 border-b-2 border-emerald-700 bg-white flex items-center space-x-2 transition whitespace-nowrap cursor-pointer">
+                    <i class="fa-solid fa-fire"></i>
+                    <span>Engorda / Confinamento</span>
+                </button>
+                <button type="button" onclick="mudarAba('insumos')" id="btn-insumos" class="tab-btn px-6 py-4 text-sm font-medium text-stone-600 hover:text-emerald-800 border-b-2 border-transparent flex items-center space-x-2 transition whitespace-nowrap cursor-pointer">
+                    <i class="fa-solid fa-box-archive"></i>
+                    <span>Compras de Insumos</span>
+                </button>
+                <button type="button" onclick="mudarAba('gado')" id="btn-gado" class="tab-btn px-6 py-4 text-sm font-medium text-stone-600 hover:text-emerald-800 border-b-2 border-transparent flex items-center space-x-2 transition whitespace-nowrap cursor-pointer">
+                    <i class="fa-solid fa-cow"></i>
+                    <span>Lotes de Gado</span>
+                </button>
+                <button type="button" onclick="mudarAba('manutencao')" id="btn-manutencao" class="tab-btn px-6 py-4 text-sm font-medium text-stone-600 hover:text-emerald-800 border-b-2 border-transparent flex items-center space-x-2 transition whitespace-nowrap cursor-pointer">
+                    <i class="fa-solid fa-screwdriver-wrench"></i>
+                    <span>Manutenções</span>
+                </button>
+            </div>
+
+            <!-- Conteúdo das Abas -->
+            <div class="p-6">
+                
+                <!-- ABA 1: ENGORDA -->
+                <div id="conteudo-engorda" class="tab-content">
+                    <h3 class="text-lg font-bold text-stone-800 mb-4">Relatório de Lotes em Engorda</h3>
+                    <div class="overflow-x-auto rounded-xl border border-stone-200">
+                        <table class="min-w-full divide-y divide-stone-200 text-left text-sm">
+                            <thead class="bg-stone-100 text-stone-700 font-semibold">
+                                <tr>
+                                    <th class="px-4 py-3">Lote</th>
+                                    <th class="px-4 py-3">Animais</th>
+                                    <th class="px-4 py-3">Entrada</th>
+                                    <th class="px-4 py-3">Dias Confinado</th>
+                                    <th class="px-4 py-3">Peso Inicial</th>
+                                    <th class="px-4 py-3">Custo Insumos</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-stone-200 bg-white">
+                                {% for e in relatorio_engorda %}
+                                <tr class="hover:bg-amber-50/30 transition">
+                                    <td class="px-4 py-3 font-semibold text-stone-800">{{ e.numero_lote }}</td>
+                                    <td class="px-4 py-3 text-stone-600">{{ e.quantidade_animais }}</td>
+                                    <td class="px-4 py-3 text-stone-600">{{ e.data_entrada }}</td>
+                                    <td class="px-4 py-3 text-stone-600">{{ "%.0f"|format(e.dias_confinado) }} dias</td>
+                                    <td class="px-4 py-3 text-stone-600">{{ e.peso_entrada }} kg</td>
+                                    <td class="px-4 py-3 font-medium text-emerald-700">R$ {{ "%.2f"|format(e.custo_total_insumos) }}</td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="6" class="px-4 py-8 text-center text-stone-500 italic">Nenhum lote em engorda registrado.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- ABA 2: INSUMOS -->
+                <div id="conteudo-insumos" class="tab-content hidden">
+                    <h3 class="text-lg font-bold text-stone-800 mb-4">Relatório de Compras de Insumos</h3>
+                    <div class="overflow-x-auto rounded-xl border border-stone-200">
+                        <table class="min-w-full divide-y divide-stone-200 text-left text-sm">
+                            <thead class="bg-stone-100 text-stone-700 font-semibold">
+                                <tr>
+                                    <th class="px-4 py-3">Data</th>
+                                    <th class="px-4 py-3">Tipo</th>
+                                    <th class="px-4 py-3">Quantidade</th>
+                                    <th class="px-4 py-3">Valor Total</th>
+                                    <th class="px-4 py-3">Custos Adicionais</th>
+                                    <th class="px-4 py-3">Custo Final</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-stone-200 bg-white">
+                                {% for i in relatorio_insumos %}
+                                <tr class="hover:bg-amber-50/30 transition">
+                                    <td class="px-4 py-3 text-stone-600">{{ i.data_compra }}</td>
+                                    <td class="px-4 py-3 font-semibold text-stone-800">{{ i.tipo }}</td>
+                                    <td class="px-4 py-3 text-stone-600">{{ i.quantidade }}</td>
+                                    <td class="px-4 py-3 text-stone-600">R$ {{ "%.2f"|format(i.valor_total) }}</td>
+                                    <td class="px-4 py-3 text-stone-600">R$ {{ "%.2f"|format(i.custos_adicionais) }}</td>
+                                    <td class="px-4 py-3 font-medium text-emerald-700">R$ {{ "%.2f"|format(i.custo_final_total) }}</td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="6" class="px-4 py-8 text-center text-stone-500 italic">Nenhum insumo registrado.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- ABA 3: GADO -->
+                <div id="conteudo-gado" class="tab-content hidden">
+                    <h3 class="text-lg font-bold text-stone-800 mb-4">Relatório de Lotes de Gado</h3>
+                    <div class="overflow-x-auto rounded-xl border border-stone-200">
+                        <table class="min-w-full divide-y divide-stone-200 text-left text-sm">
+                            <thead class="bg-stone-100 text-stone-700 font-semibold">
+                                <tr>
+                                    <th class="px-4 py-3">Data</th>
+                                    <th class="px-4 py-3">Lote</th>
+                                    <th class="px-4 py-3">Raça</th>
+                                    <th class="px-4 py-3">Qtd</th>
+                                    <th class="px-4 py-3">Preço Lote</th>
+                                    <th class="px-4 py-3">Custo Adicional</th>
+                                    <th class="px-4 py-3">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-stone-200 bg-white">
+                                {% for g in relatorio_gado %}
+                                <tr class="hover:bg-amber-50/30 transition">
+                                    <td class="px-4 py-3 text-stone-600">{{ g.data_compra }}</td>
+                                    <td class="px-4 py-3 font-semibold text-stone-800">{{ g.numero_lote }}</td>
+                                    <td class="px-4 py-3 text-stone-600">{{ g.raca }}</td>
+                                    <td class="px-4 py-3 text-stone-600">{{ g.quantidade }}</td>
+                                    <td class="px-4 py-3 text-stone-600">R$ {{ "%.2f"|format(g.preco_lote) }}</td>
+                                    <td class="px-4 py-3 text-stone-600">R$ {{ "%.2f"|format(g.custos_adicionais) }}</td>
+                                    <td class="px-4 py-3 font-medium text-emerald-700">R$ {{ "%.2f"|format(g.custo_final_lote) }}</td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="7" class="px-4 py-8 text-center text-stone-500 italic">Nenhum lote de gado registrado.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- ABA 4: MANUTENÇÃO -->
+                <div id="conteudo-manutencao" class="tab-content hidden">
+                    <h3 class="text-lg font-bold text-stone-800 mb-4">Relatório de Manutenção e Custos</h3>
+                    <div class="overflow-x-auto rounded-xl border border-stone-200">
+                        <table class="min-w-full divide-y divide-stone-200 text-left text-sm">
+                            <thead class="bg-stone-100 text-stone-700 font-semibold">
+                                <tr>
+                                    <th class="px-4 py-3">Data</th>
+                                    <th class="px-4 py-3">Categoria</th>
+                                    <th class="px-4 py-3">Descrição</th>
+                                    <th class="px-4 py-3">Valor</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-stone-200 bg-white">
+                                {% for m in relatorio_manutencao %}
+                                <tr class="hover:bg-amber-50/30 transition">
+                                    <td class="px-4 py-3 text-stone-600">{{ m.data_gasto }}</td>
+                                    <td class="px-4 py-3 font-semibold text-stone-800">{{ m.categoria }}</td>
+                                    <td class="px-4 py-3 text-stone-600">{{ m.descricao }}</td>
+                                    <td class="px-4 py-3 font-medium text-emerald-700">R$ {{ "%.2f"|format(m.valor) }}</td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="4" class="px-4 py-8 text-center text-stone-500 italic">Nenhuma manutenção registrada.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Script JavaScript para Troca de Abas -->
+    <script>
+        function mudarAba(abaNome) {
+            // Esconde todos os conteúdos
+            const conteudos = document.querySelectorAll('.tab-content');
+            conteudos.forEach(c => c.classList.add('hidden'));
+
+            // Remove o estilo ativo de todos os botões
+            const botoes = document.querySelectorAll('.tab-btn');
+            botoes.forEach(b => {
+                b.classList.remove('text-emerald-800', 'border-emerald-700', 'bg-white', 'font-semibold');
+                b.classList.add('text-stone-600', 'border-transparent', 'font-medium');
+            });
+
+            // Mostra o conteúdo selecionado
+            const conteudoAtivo = document.getElementById('conteudo-' + abaNome);
+            if (conteudoAtivo) {
+                conteudoAtivo.classList.remove('hidden');
+            }
+
+            // Ativa o botão selecionado
+            const btnAtivo = document.getElementById('btn-' + abaNome);
+            if (btnAtivo) {
+                btnAtivo.classList.remove('text-stone-600', 'border-transparent', 'font-medium');
+                btnAtivo.classList.add('text-emerald-800', 'border-emerald-700', 'bg-white', 'font-semibold');
+            }
+        }
+    </script>
+</body>
+</html>
