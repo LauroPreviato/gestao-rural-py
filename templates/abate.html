@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestão de Abate - Agropecuaria Previato</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Inter & FontAwesome Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-amber-50/50 text-stone-800 h-full flex flex-col">
+
+    <!-- Cabeçalho da Fazenda -->
+    <header class="bg-emerald-800 text-white shadow-md border-b-4 border-amber-600">
+        <div class="max-w-7xl mx-auto px-4 py-4 sm:px-6 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <div class="bg-emerald-900 p-2.5 rounded-xl border border-emerald-700 shadow-inner">
+                    <i class="fa-solid fa-cow text-amber-400 text-2xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-tight text-amber-100">Agropecuaria Previato</h1>
+                    <p class="text-xs text-emerald-300">Sistema de Gestão de Pecuária - Módulo Gado Abatido</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-4">
+                <a href="/" class="bg-emerald-700 hover:bg-emerald-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition shadow">
+                    <i class="fa-solid fa-house mr-1"></i> Início
+                </a>
+                <span class="text-xs bg-emerald-900/80 px-3 py-1 rounded-full text-amber-200 border border-emerald-700 hidden sm:inline-block">
+                    <i class="fa-solid fa-database mr-1"></i> Armazenamento Local Ativo
+                </span>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 py-8 sm:px-6 flex-grow w-full">
+        
+        <!-- Formulário de Registro de Abate -->
+        <div class="bg-white rounded-2xl shadow-md p-6 border border-stone-200 mb-8 max-w-4xl mx-auto">
+            <h2 class="text-xl font-semibold text-emerald-900 mb-4 pb-2 border-b border-stone-100 flex items-center">
+                <i class="fa-solid fa-file-invoice-dollar text-amber-600 mr-2"></i> Cadastrar Romaneio do Frigorífico
+            </h2>
+            <form method="POST">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-sm font-medium text-stone-700 mb-1">Selecione o Lote em Engorda</label>
+                        <select name="engorda_id" required class="w-full px-3 py-2 border border-stone-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm">
+                            <option value="" disabled selected>Escolha o lote ativo</option>
+                            {% for lote in lotes_engorda %}
+                            <option value="{{ lote.id }}">Lote: {{ lote.numero_lote }} (Entrada: {{ lote.data_entrada }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-stone-700 mb-1">Data do Abate</label>
+                        <input type="date" name="data_abate" required class="w-full px-3 py-2 border border-stone-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                    <div>
+                        <label class="block text-sm font-medium text-stone-700 mb-1">Peso Vivo Total (Embarque - kg)</label>
+                        <input type="number" step="0.01" name="peso_vivo_embarque" required placeholder="Ex: 8000.00" class="w-full px-3 py-2 border border-stone-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-stone-700 mb-1">Peso Carcaça Total (Frigorífico - kg)</label>
+                        <input type="number" step="0.01" name="peso_total_carcaca" required placeholder="Ex: 4500.00" class="w-full px-3 py-2 border border-stone-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-stone-700 mb-1">Valor Total Recebido (R$)</label>
+                        <input type="number" step="0.01" name="valor_recebido" required placeholder="Ex: 75000.00" class="w-full px-3 py-2 border border-stone-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-stone-700 mb-1">Observações / Nota do Frigorífico</label>
+                    <input type="text" name="observacoes" placeholder="Ex: Boa qualidade de carcaça, quebra normal" class="w-full px-3 py-2 border border-stone-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+
+                <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2.5 rounded-lg transition shadow text-sm">
+                    <i class="fa-solid fa-check mr-1"></i> Salvar Romaneio e Gerar Relatório de Abate
+                </button>
+            </form>
+        </div>
+
+        <!-- Tabela do Histórico Comparativo de Abates -->
+        <div class="bg-white rounded-2xl shadow-md p-6 border border-stone-200 overflow-x-auto">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3">
+                <h2 class="text-xl font-semibold text-emerald-900 flex items-center">
+                    <i class="fa-solid fa-chart-line text-amber-600 mr-2"></i> Relatório Comparativo de Gado Abatido
+                </h2>
+                <a href="{{ url_for('exportar_dados', tipo='abate') }}" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition shadow flex items-center space-x-1.5">
+                    <i class="fa-solid fa-file-excel mr-1"></i> Baixar Planilha (CSV)
+                </a>
+            </div>
+
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="border-b border-stone-200 text-stone-500 text-xs uppercase tracking-wider">
+                        <th class="py-3 px-4">Lote</th>
+                        <th class="py-3 px-4">Data Abate</th>
+                        <th class="py-3 px-4">Cabeças</th>
+                        <th class="py-3 px-4">Peso Vivo</th>
+                        <th class="py-3 px-4">Peso Carcaça</th>
+                        <th class="py-3 px-4">Rend. Carcaça</th>
+                        <th class="py-3 px-4">Arrobas (@)</th>
+                        <th class="py-3 px-4">Custo Produção</th>
+                        <th class="py-3 px-4">Valor Recebido</th>
+                        <th class="py-3 px-4">Resultado</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-stone-100 text-sm">
+                    {% for abate in historico_abates %}
+                    {% set arrobas_carcaca = abate.peso_total_carcaca / 15 %}
+                    {% set resultado = abate.valor_recebido - abate.custo_total_producao %}
+                    <tr class="hover:bg-emerald-50/40 transition">
+                        <td class="py-3 px-4 font-semibold text-emerald-900">{{ abate.numero_lote }}</td>
+                        <td class="py-3 px-4 text-stone-600">{{ abate.data_abate }}</td>
+                        <td class="py-3 px-4">{{ abate.quantidade_cabecas }} cab</td>
+                        <td class="py-3 px-4 text-stone-600">{{ "%.2f"|format(abate.peso_vivo_embarque) }} kg</td>
+                        <td class="py-3 px-4 font-medium">{{ "%.2f"|format(abate.peso_total_carcaca) }} kg</td>
+                        <td class="py-3 px-4 font-bold text-amber-700">{{ "%.2f"|format(abate.rendimento_carcaca or 0) }}%</td>
+                        <td class="py-3 px-4 text-stone-700">{{ "%.2f"|format(arrobas_carcaca) }} @</td>
+                        <td class="py-3 px-4 text-stone-700">R$ {{ "%.2f"|format(abate.custo_total_producao) }}</td>
+                        <td class="py-3 px-4 text-emerald-700 font-semibold">R$ {{ "%.2f"|format(abate.valor_recebido) }}</td>
+                        <td class="py-3 px-4 font-bold {% if resultado >= 0 %}text-emerald-700{% else %}text-red-600{% endif %}">
+                            R$ {{ "%.2f"|format(resultado) }}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="10" class="py-8 text-center text-stone-400">Nenhum abate registrado até o momento.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+</body>
+</html>

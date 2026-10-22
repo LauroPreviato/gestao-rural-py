@@ -1,7 +1,12 @@
 from datetime import datetime
 import os
-from flask import Flask, redirect, render_template, request, url_for
+import io
 import sqlite3
+from flask import Flask, redirect, render_template, request, url_for, make_response
+from reportlab.lib.pagesizes import letter, landscape
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Table, TableStyle
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib import colors
 
 app = Flask(__name__)
 
@@ -11,7 +16,7 @@ DB_PATH = os.path.join("dados", "fazenda.db")
 
 
 def init_db():
-    """Cria todas as tabelas do sistema caso elas ainda não existam"""
+    """Cria todas las tabelas do sistema caso elas ainda não existam"""
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
 
@@ -83,6 +88,23 @@ def init_db():
         )
     """)
 
+    # 6. Tabela de Gado Abatido (Romaneio do Frigorífico) com Rendimento
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS abate (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            engorda_id INTEGER,
+            numero_lote TEXT NOT NULL,
+            data_abate TEXT NOT NULL,
+            quantidade_cabecas INTEGER NOT NULL,
+            peso_vivo_embarque REAL NOT NULL,
+            peso_total_carcaca REAL NOT NULL,
+            rendimento_carcaca REAL,
+            valor_recebido REAL NOT NULL,
+            observacoes TEXT,
+            FOREIGN KEY (engorda_id) REFERENCES engorda (id)
+        )
+    """)
+
     conn.commit()
     conn.close()
 
@@ -94,7 +116,6 @@ def inicio():
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
 
-    # Buscando algumas estatísticas rápidas para exibir na tela de início
     cursor.execute("SELECT COUNT(*) as total FROM gado")
     total_gado = cursor.fetchone()["total"]
 
@@ -104,6 +125,9 @@ def inicio():
     cursor.execute("SELECT COUNT(*) as total FROM engorda")
     total_engorda = cursor.fetchone()["total"]
 
+    cursor.execute("SELECT COUNT(*) as total FROM abate")
+    total_abate = cursor.fetchone()["total"]
+
     conn.close()
 
     return render_template(
@@ -111,6 +135,7 @@ def inicio():
         total_gado=total_gado,
         total_insumos=total_insumos,
         total_engorda=total_engorda,
+        total_abate=total_abate,
     )
 
 
@@ -239,7 +264,6 @@ def gerenciar_engorda():
     if request.method == "POST":
         acao = request.form.get("acao")
 
-        # AÇÃO 1: Iniciar um novo lote em engorda/confinamento
         if acao == "iniciar_lote":
             lote_id = request.form.get("lote_id")
             data_entrada = request.form.get("data_entrada")
@@ -264,7 +288,6 @@ def gerenciar_engorda():
                 )
                 conn.commit()
 
-        # AÇÃO 2: Registrar consumo diário com baixa de estoque
         elif acao == "registrar_consumo":
             engorda_id = request.form.get("engorda_id")
             insumo_id = request.form.get("insumo_id")
@@ -287,7 +310,6 @@ def gerenciar_engorda():
                     ),
                 )
 
-                # Dá baixa automática no estoque geral de insumos
                 cursor.execute("SELECT * FROM insumos WHERE id = ?", (insumo_id,))
                 insumo = cursor.fetchone()
                 if insumo:
@@ -297,7 +319,6 @@ def gerenciar_engorda():
                         (max(0, nova_qtd), insumo_id),
                     )
 
-                # Recalcula o custo total de insumos desse lote de engorda
                 cursor.execute(
                     """
                     SELECT el.quantidade_consumida, i.valor_total, i.quantidade as qtd_original
@@ -364,7 +385,6 @@ def relatorios():
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
 
-    # 1. Relatório de Engorda / Confinamento
     cursor.execute("""
         SELECT e.*, 
         (julianday(COALESCE(e.data_saida, 'now')) - julianday(e.data_entrada)) AS dias_confinado
@@ -373,7 +393,6 @@ def relatorios():
     """)
     relatorio_engorda = cursor.fetchall()
 
-    # 2. Relatório de Insumos Comprados
     cursor.execute("""
         SELECT *, (valor_total + custos_adicionais) as custo_final_total 
         FROM insumos 
@@ -381,7 +400,6 @@ def relatorios():
     """)
     relatorio_insumos = cursor.fetchall()
 
-    # 3. Relatório de Lotes de Gado Comprados
     cursor.execute("""
         SELECT *, (preco_lote + custos_adicionais) as custo_final_lote 
         FROM gado 
@@ -389,14 +407,12 @@ def relatorios():
     """)
     relatorio_gado = cursor.fetchall()
 
-    # 4. Relatório de Manutenção e Custos Gerais
     cursor.execute("""
         SELECT * FROM manutencao 
         ORDER BY data_gasto DESC
     """)
     relatorio_manutencao = cursor.fetchall()
 
-    # 5. Totais Gerais para os Cards Resumo
     cursor.execute("SELECT SUM(valor_total + custos_adicionais) as total FROM insumos")
     gasto_insumos = cursor.fetchone()["total"] or 0
 
@@ -421,6 +437,225 @@ def relatorios():
         gasto_manutencao=gasto_manutencao,
         gasto_total_geral=gasto_total_geral,
     )
+
+
+# --- ROTA 6: GADO ABATIDO E RELATÓRIO DE RENDIMENTO (/abate) ---
+@app.route("/abate", methods=["GET", "POST"])
+def gerenciar_abate():
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+
+    if request.method == "POST":
+        engorda_id = request.form.get("engorda_id")
+        data_abate = request.form.get("data_abate")
+        peso_vivo_embarque = float(request.form.get("peso_vivo_embarque") or 0)
+        peso_total_carcaca = float(request.form.get("peso_total_carcaca") or 0)
+        valor_recebido = float(request.form.get("valor_recebido") or 0)
+        observacoes = request.form.get("observacoes", "")
+
+        rendimento_carcaca = 0
+        if peso_vivo_embarque > 0:
+            rendimento_carcaca = (peso_total_carcaca / peso_vivo_embarque) * 100
+
+        cursor.execute("SELECT * FROM engorda WHERE id = ?", (engorda_id,))
+        lote_engorda = cursor.fetchone()
+
+        if lote_engorda:
+            numero_lote = lote_engorda["numero_lote"]
+            quantidade_cabecas = lote_engorda["quantidade_animais"]
+
+            cursor.execute(
+                """
+                INSERT INTO abate (engorda_id, numero_lote, data_abate, quantidade_cabecas, peso_vivo_embarque, peso_total_carcaca, rendimento_carcaca, valor_recebido, observacoes)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+                (
+                    engorda_id,
+                    numero_lote,
+                    data_abate,
+                    quantidade_cabecas,
+                    peso_vivo_embarque,
+                    peso_total_carcaca,
+                    rendimento_carcaca,
+                    valor_recebido,
+                    observacoes,
+                ),
+            )
+            conn.commit()
+
+        conn.close()
+        return redirect(url_for("gerenciar_abate"))
+
+    cursor.execute("SELECT * FROM engorda ORDER BY data_entrada DESC")
+    lotes_engorda = cursor.fetchall()
+
+    cursor.execute("""
+        SELECT a.*, e.data_entrada, e.peso_entrada, e.custo_total_insumos,
+               g.preco_lote, g.custos_adicionais as custo_compra_extra,
+               (g.preco_lote + g.custos_adicionais + e.custo_total_insumos) AS custo_total_producao
+        FROM abate a
+        JOIN engorda e ON a.engorda_id = e.id
+        JOIN gado g ON e.lote_id = g.id
+        ORDER BY a.data_abate DESC
+    """)
+    historico_abates = cursor.fetchall()
+
+    conn.close()
+
+    return render_template(
+        "abate.html",
+        lotes_engorda=lotes_engorda,
+        historico_abates=historico_abates,
+    )
+
+
+# --- ROTA 7: EXPORTAR DADOS EM PDF (/exportar/<tipo>) ---
+@app.route("/exportar/<tipo>")
+def exportar_dados(tipo):
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+
+    response = make_response()
+    response.headers['Content-Type'] = 'application/pdf'
+
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(
+        buffer, 
+        pagesize=landscape(letter),
+        rightMargin=30, leftMargin=30, topMargin=30, bottomMargin=30
+    )
+    elements = []
+    styles = getSampleStyleSheet()
+
+    title_style = ParagraphStyle(
+        'TitleStyle',
+        parent=styles['Heading1'],
+        fontName='Helvetica-Bold',
+        fontSize=18,
+        textColor=colors.HexColor('#065f46'),
+        spaceAfter=4
+    )
+    subtitle_style = ParagraphStyle(
+        'SubTitleStyle',
+        parent=styles['Normal'],
+        fontName='Helvetica',
+        fontSize=10,
+        textColor=colors.HexColor('#78716c'),
+        spaceAfter=15
+    )
+    cell_style = ParagraphStyle(
+        'CellStyle',
+        parent=styles['Normal'],
+        fontName='Helvetica',
+        fontSize=9,
+        textColor=colors.HexColor('#1c1917')
+    )
+
+    if tipo == "abate":
+        cursor.execute("""
+            SELECT a.numero_lote, a.data_abate, a.quantidade_cabecas, a.peso_vivo_embarque, 
+                   a.peso_total_carcaca, a.rendimento_carcaca, a.valor_recebido, a.observacoes
+            FROM abate a ORDER BY a.data_abate DESC
+        """)
+        registros = cursor.fetchall()
+        
+        elements.append(Paragraph("Agropecuária Previato", title_style))
+        elements.append(Paragraph("Relatório Oficial de Gado Abatido (Romaneio do Frigorífico)", subtitle_style))
+
+        data = [["Lote", "Data Abate", "Cabeças", "Peso Vivo", "Peso Carcaça", "Rend. (%)", "Valor Recebido", "Observações"]]
+        
+        for r in registros:
+            data.append([
+                Paragraph(str(r["numero_lote"]), cell_style),
+                Paragraph(str(r["data_abate"]), cell_style),
+                Paragraph(str(r["quantidade_cabecas"]), cell_style),
+                Paragraph(f"{r['peso_vivo_embarque']:.2f} kg", cell_style),
+                Paragraph(f"{r['peso_total_carcaca']:.2f} kg", cell_style),
+                Paragraph(f"{r['rendimento_carcaca']:.2f}%" if r['rendimento_carcaca'] else "0%", cell_style),
+                Paragraph(f"R$ {r['valor_recebido']:.2f}", cell_style),
+                Paragraph(str(r["observacoes"] or ""), cell_style)
+            ])
+        
+        filename = "relatorio_abate.pdf"
+        col_widths = [65, 75, 55, 70, 75, 65, 85, 185]
+
+    elif tipo == "engorda":
+        cursor.execute("""
+            SELECT e.numero_lote, e.quantidade_animais, e.data_entrada, e.data_saida, 
+                   e.peso_entrada, e.custo_total_insumos,
+                   (julianday(COALESCE(e.data_saida, 'now')) - julianday(e.data_entrada)) AS dias
+            FROM engorda e ORDER BY e.data_entrada DESC
+        """)
+        registros = cursor.fetchall()
+
+        elements.append(Paragraph("Agropecuária Previato", title_style))
+        elements.append(Paragraph("Relatório de Desempenho e Custos Operacionais por Lote", subtitle_style))
+
+        data = [["Lote", "Animais", "Entrada", "Saída", "Peso Entrada", "Custo Insumos", "Dias", "Custo Diário/Cab"]]
+        
+        for r in registros:
+            dias = int(r["dias"]) if r["dias"] and r["dias"] > 0 else 1
+            custo_cab = (r["custo_total_insumos"] / dias) / r["quantidade_animais"] if r["quantidade_animais"] > 0 else 0
+            
+            data.append([
+                Paragraph(str(r["numero_lote"]), cell_style),
+                Paragraph(str(r["quantidade_animais"]), cell_style),
+                Paragraph(str(r["data_entrada"]), cell_style),
+                Paragraph(str(r["data_saida"] or "Ativo"), cell_style),
+                Paragraph(f"{r['peso_entrada']:.2f} kg", cell_style),
+                Paragraph(f"R$ {r['custo_total_insumos']:.2f}", cell_style),
+                Paragraph(f"{dias} dias", cell_style),
+                Paragraph(f"R$ {custo_cab:.2f}", cell_style)
+            ])
+
+        filename = "relatorio_desempenho.pdf"
+        col_widths = [75, 65, 75, 75, 85, 95, 65, 100]
+
+    conn.close()
+
+    t = Table(data, colWidths=col_widths)
+    t.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#047857')),
+        ('TEXTCOLOR', (0,0), (-1,0), colors.white),
+        ('ALIGN', (0,0), (-1,-1), 'LEFT'),
+        ('BOTTOMPADDING', (0,0), (-1,0), 6),
+        ('TOPPADDING', (0,0), (-1,0), 6),
+        ('ROWBACKGROUNDS', (0,1), (-1,-1), [colors.white, colors.HexColor('#f9fafb')]),
+        ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor('#e7e5e4'))
+    ]))
+
+    elements.append(t)
+    doc.build(elements)
+
+    response.data = buffer.getvalue()
+    response.headers['Content-Disposition'] = f'attachment; filename={filename}'
+    return response
+
+
+# --- ROTA 8: DESEMPENHO ZOOTÉCNICO (/desempenho) ---
+@app.route("/desempenho")
+def desempenho_lotes():
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT e.id as engorda_id, e.numero_lote, e.quantidade_animais, e.data_entrada, e.data_saida,
+               e.peso_entrada, e.custo_total_insumos,
+               g.preco_lote, g.custos_adicionais as custo_extra_gado, g.raca,
+               (julianday(COALESCE(e.data_saida, 'now')) - julianday(e.data_entrada)) AS dias_confinado,
+               ab.peso_total_carcaca, ab.valor_recebido, ab.data_abate
+        FROM engorda e
+        JOIN gado g ON e.lote_id = g.id
+        LEFT JOIN abate ab ON ab.engorda_id = e.id
+        ORDER BY e.data_entrada DESC
+    """)
+    lotes_desempenho = cursor.fetchall()
+    conn.close()
+
+    return render_template("desempenho.html", lotes_desempenho=lotes_desempenho)
 
 
 if __name__ == "__main__":

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Desempenho Zootécnico - Agropecuaria Previato</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Inter & FontAwesome Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-amber-50/50 text-stone-800 h-full flex flex-col">
+
+    <!-- Cabeçalho da Fazenda -->
+    <header class="bg-emerald-800 text-white shadow-md border-b-4 border-amber-600">
+        <div class="max-w-7xl mx-auto px-4 py-4 sm:px-6 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <div class="bg-emerald-900 p-2.5 rounded-xl border border-emerald-700 shadow-inner">
+                    <i class="fa-solid fa-chart-bar text-amber-400 text-2xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-tight text-amber-100">Agropecuaria Previato</h1>
+                    <p class="text-xs text-emerald-300">Sistema de Gestão de Pecuária - Desempenho e Custos Operacionais</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-4">
+                <a href="/" class="bg-emerald-700 hover:bg-emerald-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition shadow">
+                    <i class="fa-solid fa-house mr-1"></i> Início
+                </a>
+                <span class="text-xs bg-emerald-900/80 px-3 py-1 rounded-full text-amber-200 border border-emerald-700 hidden sm:inline-block">
+                    <i class="fa-solid fa-database mr-1"></i> Armazenamento Local Ativo
+                </span>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 py-8 sm:px-6 flex-grow w-full">
+        
+        <!-- Tabela de Desempenho e Custo Diário -->
+        <div class="bg-white rounded-2xl shadow-md p-6 border border-stone-200 overflow-x-auto">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3">
+                <h2 class="text-xl font-semibold text-emerald-900 flex items-center">
+                    <i class="fa-solid fa-scale-balanced text-amber-600 mr-2"></i> Indicadores de Engorda e Custo Diário
+                </h2>
+                <a href="{{ url_for('exportar_dados', tipo='engorda') }}" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition shadow flex items-center space-x-1.5">
+                    <i class="fa-solid fa-file-excel mr-1"></i> Baixar Planilha (CSV)
+                </a>
+            </div>
+
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="border-b border-stone-200 text-stone-500 text-xs uppercase tracking-wider">
+                        <th class="py-3 px-4">Lote / Raça</th>
+                        <th class="py-3 px-4">Entrada</th>
+                        <th class="py-3 px-4">Dias</th>
+                        <th class="py-3 px-4">Peso Inicial (Lote)</th>
+                        <th class="py-3 px-4">Custo Total Insumos</th>
+                        <th class="py-3 px-4">Custo Diário (Lote)</th>
+                        <th class="py-3 px-4">Custo Diário / Cab.</th>
+                        <th class="py-3 px-4">Status / Abate</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-stone-100 text-sm">
+                    {% for item in lotes_desempenho %}
+                    {% set dias = item.dias_confinado if item.dias_confinado > 0 else 1 %}
+                    {% set custo_dia_lote = item.custo_total_insumos / dias %}
+                    {% set custo_dia_cab = custo_dia_lote / item.quantidade_animais if item.quantidade_animais > 0 else 0 %}
+                    <tr class="hover:bg-emerald-50/40 transition">
+                        <td class="py-3 px-4">
+                            <span class="font-semibold text-emerald-900">{{ item.numero_lote }}</span><br>
+                            <span class="text-xs text-stone-500">{{ item.raca }} ({{ item.quantidade_animais }} cab)</span>
+                        </td>
+                        <td class="py-3 px-4 text-stone-600">{{ item.data_entrada }}</td>
+                        <td class="py-3 px-4 font-medium">{{ dias | int }} dias</td>
+                        <td class="py-3 px-4 text-stone-600">{{ "%.2f"|format(item.peso_entrada) }} kg</td>
+                        <td class="py-3 px-4 text-emerald-700 font-semibold">R$ {{ "%.2f"|format(item.custo_total_insumos) }}</td>
+                        <td class="py-3 px-4 text-stone-700 font-medium">R$ {{ "%.2f"|format(custo_dia_lote) }}/dia</td>
+                        <td class="py-3 px-4 text-amber-700 font-bold">R$ {{ "%.2f"|format(custo_dia_cab) }}/cab/dia</td>
+                        <td class="py-3 px-4">
+                            {% if item.data_abate %}
+                                <span class="bg-emerald-100 text-emerald-800 text-xs px-2.5 py-1 rounded-full font-semibold">Abatido em {{ item.data_abate }}</span>
+                            {% else %}
+                                <span class="bg-amber-100 text-amber-800 text-xs px-2.5 py-1 rounded-full font-semibold">Ativo em Confinamento</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="8" class="py-8 text-center text-stone-400">Nenhum lote registrado para análise de desempenho.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+</body>
+</html>

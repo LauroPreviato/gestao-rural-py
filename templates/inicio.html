@@ -23,7 +23,7 @@
                 </div>
                 <div>
                     <h1 class="text-3xl font-extrabold tracking-wide text-amber-100">Agropecuária Previato</h1>
-                    <p class="text-emerald-200 text-sm mt-1">Sistema de Gestão Pecuária - Controle completo de rebanho, insumos, manutenção e engorda</p>
+                    <p class="text-emerald-200 text-sm mt-1">Sistema de Gestão Pecuária - Controle completo de rebanho, insumos, manutenção, engorda, abate e desempenho</p>
                 </div>
             </div>
             <div>
@@ -35,7 +35,7 @@
         </header>
 
         <!-- Cards de Navegação (Menu Principal) -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-12">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
             
             <!-- Card 1: Insumos -->
             <a href="/insumos" class="bg-white p-6 rounded-2xl shadow-md border border-stone-200 hover:border-emerald-500 hover:shadow-xl transition group">
@@ -69,12 +69,20 @@
                 <span class="text-xs font-semibold bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-full">{{ total_engorda }} em confinamento</span>
             </a>
 
-            <!-- Card 5: Relatórios -->
-            <a href="{{ url_for('relatorios') }}" class="bg-white p-6 rounded-2xl shadow-md border border-stone-200 hover:border-amber-500 hover:shadow-xl transition group">
-                <div class="text-3xl mb-3">📊</div>
-                <h2 class="text-xl font-bold text-emerald-900 group-hover:text-amber-600 transition">Relatórios</h2>
-                <p class="text-stone-500 text-sm mt-1 mb-4">Consolidados financeiros, custos totais e investimentos.</p>
-                <span class="text-xs font-semibold bg-amber-100 text-amber-800 px-2.5 py-1 rounded-full">Painel Geral</span>
+            <!-- Card 5: Gado Abatido -->
+            <a href="/abate" class="bg-white p-6 rounded-2xl shadow-md border border-stone-200 hover:border-emerald-500 hover:shadow-xl transition group">
+                <div class="text-3xl mb-3">🥩</div>
+                <h2 class="text-xl font-bold text-emerald-900 group-hover:text-emerald-600 transition">Gado Abatido</h2>
+                <p class="text-stone-500 text-sm mt-1 mb-4">Romaneio do frigorífico, rendimento de carcaça e resultado.</p>
+                <span class="text-xs font-semibold bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-full">{{ total_abate }} lotes abatidos</span>
+            </a>
+
+            <!-- Card 6: Desempenho Zootécnico (Novo) -->
+            <a href="/desempenho" class="bg-white p-6 rounded-2xl shadow-md border border-stone-200 hover:border-emerald-500 hover:shadow-xl transition group">
+                <div class="text-3xl mb-3">📈</div>
+                <h2 class="text-xl font-bold text-emerald-900 group-hover:text-emerald-600 transition">Desempenho por Lote</h2>
+                <p class="text-stone-500 text-sm mt-1 mb-4">Análise de custos diários, dias confinados e indicadores zootécnicos.</p>
+                <span class="text-xs font-semibold bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-full">Painel por Lote</span>
             </a>
 
         </div>
