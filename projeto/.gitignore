@@ -1,0 +1,26 @@
+# Ambiente virtual (geralmente chamado de venv ou .venv)
+venv/
+.venv/
+ENV/
+env/
+
+# Banco de dados e arquivos locais da fazenda
+dados/
+*.db
+*.sqlite
+*.sqlite3
+
+# Arquivos de cache do Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Arquivos do Editor (VS Code / PyCharm)
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
